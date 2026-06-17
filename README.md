@@ -37,6 +37,34 @@ MiniAgent 是一个用于笔试题的最小可用 Agent 项目。它的目标是
 
 当前不包含 Web UI、MCP、多 Agent、向量库 RAG、Redis、Kafka、数据库存储。
 
+## Spec 驱动开发流程
+
+本项目不是直接让 AI 一次性生成代码，而是先走了一套可追踪的工程流程：
+
+```text
+WRITTEN_TEST_REQUIREMENT.md
+-> spec.md
+-> plan.md
+-> task.md
+-> checklist.md
+-> implementation
+-> validation
+```
+
+这条流程的作用是把“题目要求”拆成可验证的工程交付物：
+
+| 阶段 | 作用 | 对应文件 |
+|---|---|---|
+| 原始要求 | 保存笔试题原文，避免实现偏题 | `WRITTEN_TEST_REQUIREMENT.md` |
+| Spec | 明确要做什么、不做什么、验收标准是什么 | `spec.md` |
+| Plan | 设计模块分层、主流程、数据流和运行方式 | `plan.md` |
+| Task | 把实现拆成可以逐项完成的开发任务 | `task.md` |
+| Checklist | 把笔试要求转成可执行验收项 | `checklist.md` |
+| Implementation | 按任务清单实现代码 | `miniagent/` |
+| Validation | 用命令、session、trace 和 replay 验证结果 | README 中的演示和自检命令 |
+
+这种做法的价值在于：AI 可以辅助编码，但需求边界、架构拆分、验收标准和提交材料是先定义好的。相比直接让 AI 写一个 demo，这种方式更容易说明项目为什么这么设计、每个模块解决什么问题、笔试题每一项要求在哪里被满足。
+
 ## 自研 Runtime 增强点
 
 本项目没有把主流程交给固定 Agent 框架，是为了把 Agent runtime 的关键控制点显式写出来。这样可以直接看到：模型只负责产生意图，真正的执行、状态、日志和安全控制都在本地 runtime。
@@ -162,6 +190,10 @@ miniagent-written-test/
 |-- README.md
 |-- AI_PROMPTS.md
 |-- WRITTEN_TEST_REQUIREMENT.md
+|-- spec.md
+|-- plan.md
+|-- task.md
+|-- checklist.md
 |-- pyproject.toml
 `-- miniagent/
     |-- __main__.py
