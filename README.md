@@ -37,6 +37,25 @@ MiniAgent 是一个用于笔试题的最小可用 Agent 项目。它的目标是
 
 当前不包含 Web UI、MCP、多 Agent、向量库 RAG、Redis、Kafka、数据库存储。
 
+## 自研 Runtime 增强点
+
+本项目没有把主流程交给固定 Agent 框架，是为了把 Agent runtime 的关键控制点显式写出来。这样可以直接看到：模型只负责产生意图，真正的执行、状态、日志和安全控制都在本地 runtime。
+
+相比直接套一个封装好的 AgentExecutor，这个项目重点展示了下面几个可控点：
+
+| 增强点 | 解决的问题 | 体现位置 |
+|---|---|---|
+| 显式 Agent 主循环 | 能清楚看到“LLM 决策 -> 工具执行 -> 结果回写 -> 继续推理”的完整闭环，而不是被框架隐藏 | `agent.py` 的 `Agent.run_turn()` |
+| 结构化工具映射 | 模型返回 tool name 和 JSON arguments 后，本地 runtime 再映射到真实工具对象执行，避免从普通文本里正则解析 | `client.py`、`tools/`、`ToolRegistry` |
+| 工具权限检查 | 模型不能想调什么就直接执行，所有工具调用先经过本地策略拦截 | `permissions.py`、`Agent._execute_tool()` |
+| 工具结果长度预算 | 工具结果太长时不直接塞回上下文，超长结果落盘，只把摘要和预览写回消息 | `result_budget.py` |
+| JSONL trace | 每次工具调用都有可检查记录，能证明工具是否真的执行、参数是什么、结果是什么、是否失败 | `trace.py`、`.miniagent/traces/` |
+| replay 本地回放 | 不再次调用 LLM，也能复盘 session、todo 状态和工具调用链路，方便录屏和验收 | `replay.py` |
+| session state memory | 聊天历史和结构化任务状态分开保存；todo 状态会在每次 LLM 调用前召回到 system prompt | `memory/session.py`、`prompts.py` |
+| 多 provider / wire API 适配 | 模型调用层和 Agent runtime 解耦，可以切换 provider 或协议而不改主循环 | `config.py`、`client.py` |
+
+这些增强点不是为了否定 LangChain 这类框架。框架适合快速集成，但 Agent runtime 本身：谁保存状态、谁决定工具、谁执行工具、谁记录 trace、谁处理异常、谁控制上下文成本这些由runtime控制更加自由和有强适应性。本项目把这些点拆成独立模块，便于阅读、调试。
+
 ## 快速开始
 
 克隆仓库并进入仓库根目录：
